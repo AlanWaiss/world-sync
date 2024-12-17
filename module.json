@@ -1,0 +1,24 @@
+{
+  "id": "world-sync",
+  "title": "World Sync",
+  "authors": [
+    {
+      "name": "Alan Waiss"
+    }
+  ],
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "11",
+    "verified": "11"
+  },
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "esmodules": [
+    "scripts/main.js"
+  ]
+}

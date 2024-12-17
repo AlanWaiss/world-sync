@@ -1,0 +1,18 @@
+
+{
+  "world-sync.Settings.Title": "World Sync settings",
+  "world-sync.ExportPath.Name": "Export Path",
+  "world-sync.ExportPath.Hint": "The path to export files under the Foundry Data folder, it is 'world-sync' by default",
+  "world-sync.EnableTracing.Name": "Enable Tracing",
+  "world-sync.EnableTracing.Hint": "Increases the logging to the browser console for debugging",
+  "world-sync.ImportWorldPath.Name": "[Advanced] Import World Path",
+  "world-sync.ImportWorldPath.Hint": "The world path relative to the Markdown Source Path to import from. Defaults to game name.",
+  "world-sync.ExportWorldPath.Name": "[Advanced] Export World Path",
+  "world-sync.ExportWorldPath.Hint": "The world path relative to the Export Path to export to. Defaults to the name of the world.",
+  "world-sync.JournalEditorLink.Name": "Journal Editor Link",
+  "world-sync.JournalEditorLink.Hint": "Link to the editor you use to update the Journal Markdown. For example a hosted VSCode instance",
+  "world-sync.SkipJournalFolders.Name": "Skip Journal Folder Import/Export",
+  "world-sync.SkipJournalFolders.Hint": "List folders you do not want to import/export. Comma delimited.",
+  "world-sync.SkipJournalEntries.Name": "Skip Journal Entry Import/Export",
+  "world-sync.SkipJournalEntries.Hint": "List Journal entries you do not want to import/export. Comma delimited."
+}
