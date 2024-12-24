@@ -70,6 +70,7 @@ export async function startExport() {
 	//game.user.isGM
 	ui.notifications.info(`Starting ${Constants.MODULE_TITLE} export`);
 
+	const start = new Date();
 	const { worldPath } = loadSettings();
 	const journalPath = validPath(worldPath + "journal");
 	Logger.log(`Starting export to ${journalPath}`);
@@ -89,4 +90,5 @@ export async function startExport() {
 	await saveJson(journalIndex, journalPath, "_index.json");
 
 	ui.notifications.info(`${Constants.MODULE_TITLE} export complete`);
+	Logger.log(`Export complete in ${new Date() - start}ms`);
 }
