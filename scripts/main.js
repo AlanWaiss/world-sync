@@ -4,6 +4,11 @@ import { startExport as userExport } from './user-sync.js';
 import { saveEntry, startExport as journalExport } from './journal-sync.js';
 import { loadSettings, registerSettings } from './settings.js';
 
+async function journalUpdated(entry) {
+	const settings = loadSettings();
+	await saveEntry(entry, settings);
+}
+
 Hooks.once('init', async function() {
 	Logger.log(`Initializing ${Constants.MODULE_NAME}`);
 
@@ -47,14 +52,18 @@ Hooks.on('updateJournalEntry', async function(journalEntry, data, options, userI
 
 Hooks.on('createJournalEntryPage', async function(journalEntryPage, options, userId) {
 	Logger.logTrace("Hook.createJournalEntryPage", journalEntryPage, options, userId);
-	const settings = loadSettings();
 	if(journalEntryPage.parent && journalEntryPage.parent.pages)
-		await saveEntry(journalEntryPage.parent, settings);
+		await journalUpdated(journalEntryPage.parent);
+});
+
+Hooks.on('deleteJournalEntryPage', async function(journalEntryPage, data, options, userId) {
+	Logger.logTrace("Hook.deleteJournalEntryPage", journalEntryPage, data, options, userId);
+	if(journalEntryPage.parent && journalEntryPage.parent.pages)
+		await journalUpdated(journalEntryPage.parent);
 });
 
 Hooks.on('updateJournalEntryPage', async function(journalEntryPage, data, options, userId) {
 	Logger.logTrace("Hook.updateJournalEntryPage", journalEntryPage, data, options, userId);
-	const settings = loadSettings();
 	if(journalEntryPage.parent && journalEntryPage.parent.pages)
-		await saveEntry(journalEntryPage.parent, settings);
+		await journalUpdated(journalEntryPage.parent);
 });
