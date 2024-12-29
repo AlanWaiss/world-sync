@@ -1,9 +1,11 @@
 "use strict";
 
-import * as Constants from "./constants.js";
-import { ensurePath, idToFileName, saveJson, validPath } from "./files.js";
+import { ensurePath, idToFileName, loadJson, saveJson, validPath } from "./files.js";
 import * as Logger from './logger.js';
-import { loadSettings } from "./settings.js";
+
+const INDEX_FILE = "_index.json";
+
+let _index;
 
 export function buildIndex() {
 	const journalEntries = {},
@@ -32,63 +34,102 @@ export function buildIndex() {
 	}
 
 	for(const entry of game.journal) {
-		const stats = entry._stats || {},
-			folderId = (entry.folder && entry.folder.id) || '',
-			folder = folders[folderId];
-
-		journalEntries[entry.id] = {
-			id: entry.id,
-			name: entry.name,
-			flags: entry.flags,
-			ownership: entry.ownership,
-			folder: folderId,
-			sort: entry.sort,
-			stats: {
-				createdTime: stats.createdTime,
-				lastModifiedBy: stats.lastModifiedBy,
-				modifiedTime: stats.modifiedTime
-			}
-		};
-
-		if(folder)
-			folder.entries.push(entry.id);
+		indexJournalEntry(folders, journalEntries, entry);
 	}
 
-	return {
+	return _index = {
 		entries: journalEntries,
 		folders: folders
 	};
 }
 
-export async function saveEntry(entry, path) {
+async function getIndex(journalPath) {
+	if(!_index)
+		_index = (await loadIdex(journalPath)) || buildIndex();
+
+	return _index;
+}
+
+async function getJournalPath(settings) {
+	const { worldPath } = settings,
+		journalPath = validPath(worldPath + "journal");
+
+	if(!await ensurePath(journalPath)) {
+		return null;
+	}
+
+	return journalPath;
+}
+
+function indexJournalEntry(folders, journalEntries, entry) {
+	const stats = entry._stats || {},
+		folderId = (entry.folder && entry.folder.id) || '',
+		folder = folders[folderId];
+
+	journalEntries[entry.id] = {
+		id: entry.id,
+		name: entry.name,
+		flags: entry.flags,
+		ownership: entry.ownership,
+		folder: folderId,
+		sort: entry.sort,
+		stats: {
+			createdTime: stats.createdTime,
+			lastModifiedBy: stats.lastModifiedBy,
+			modifiedTime: stats.modifiedTime
+		}
+	};
+
+	if(folder)
+		folder.entries.push(entry.id);
+}
+
+async function loadIdex(journalPath) {
+	try {
+		return _index = await loadJson(journalPath, INDEX_FILE);
+	} catch(err) {
+		Logger.error(`Failed to load journal index: ${err}`);
+	}
+}
+
+async function _saveEntry(entry, path) {
 	const fileName = idToFileName(entry.id);
 
 	return await saveJson(entry, path, fileName);
 }
 
-export async function startExport() {
+export async function saveEntry(entry, settings) {
+	const journalPath = await getJournalPath(settings),
+		entryPath = await _saveEntry(entry, journalPath),
+		journalIndex = await getIndex(journalPath);
+
+	indexJournalEntry(journalIndex.folders, journalIndex.entries, entry);
+	await saveJson(journalIndex, journalPath, INDEX_FILE);
+
+	return entryPath;
+}
+
+export async function startExport(settings) {
 	//game.user.isGM
-	ui.notifications.info(`Starting ${Constants.MODULE_TITLE} export`);
 
 	const start = new Date();
-	const { worldPath } = loadSettings();
-	const journalPath = validPath(worldPath + "journal");
-	Logger.log(`Starting export to ${journalPath}`);
+	const journalPath = await getJournalPath(settings);
 
-	if(!await ensurePath(journalPath)) {
+	if(!journalPath) {
 		Logger.log("Failed to create export path. Aborting.");
 		return;
 	}
 
+	Logger.log(`Starting journal export to ${journalPath}`);
+
 	for(const entry of game.journal) {
 		Logger.log(`Exporting entry ${entry.id} (${entry.name})`);
-		await saveEntry(entry, journalPath);
+		await _saveEntry(entry, journalPath);
 	}
 
 	Logger.log("Building index");
 	const journalIndex = buildIndex();
-	await saveJson(journalIndex, journalPath, "_index.json");
+	await saveJson(journalIndex, journalPath, INDEX_FILE);
 
-	ui.notifications.info(`${Constants.MODULE_TITLE} export complete`);
 	Logger.log(`Export complete in ${new Date() - start}ms`);
 }

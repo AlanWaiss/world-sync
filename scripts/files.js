@@ -31,6 +31,20 @@ export function idToFileName(id, extension = ".json") {
 
 export const isValidFileName = (filename) => VALID_FILE_NAME.test(filename);
 
+/** Load json from the specified file. fileName is optional to keep it consistent with saveJson, but allow having the entire path together. */
+export async function loadJson(path, fileName) {
+	if(fileName)
+		path = `${path}/${fileName}`;
+	const response = await fetch(path);
+	if(!response.ok) {
+		if(404 === response.status)
+			return null;
+
+		throw new Error(`Failed to load file ${path}/${fileName}: ${response.statusText}`);
+	}
+	return await response.json();
+}
+
 export async function saveJson(data, path, fileName) {
 	try {
 		const file = new File([JSON.stringify(data, null, "\t")], fileName, {type: "application/json"});
