@@ -1,7 +1,8 @@
 "use strict";
 
-import { ensurePath, idToFileName, loadJson, saveJson, validPath } from "./files.js";
+import { ensurePath, idToFileName, loadJson, removeFile, saveJson, validPath } from "./files.js";
 import * as Logger from './logger.js';
+import { removeListItem } from './utils.js';
 
 const INDEX_FILE = "_index.json";
 
@@ -43,6 +44,22 @@ export function buildIndex() {
 	};
 }
 
+export async function deleteEntry(entry, settings) {
+	const journalPath = await getJournalPath(settings),
+		{ exportPath } = settings,
+		fileName = idToFileName(entry.id),
+		folderId = (entry.folder && entry.folder.id) || '',
+		journalIndex = await getIndex(journalPath),
+		folder = journalIndex.folders[folderId];
+
+	await removeFile(exportPath, journalPath, fileName);
+
+	if(folder)
+		removeListItem(folder.entries, entry.id);
+	delete journalIndex.entries[entry.id];
+	await saveJson(journalIndex, journalPath, INDEX_FILE);
+}
+
 async function getIndex(journalPath) {
 	if(!_index)
 		_index = (await loadIdex(journalPath)) || buildIndex();
@@ -80,7 +97,7 @@ function indexJournalEntry(folders, journalEntries, entry) {
 		}
 	};
 
-	if(folder)
+	if(folder && !folder.entries.includes(entry.id))
 		folder.entries.push(entry.id);
 }
 

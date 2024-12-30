@@ -1,8 +1,13 @@
 import * as Constants from './constants.js';
 import * as Logger from './logger.js';
 import { startExport as userExport } from './user-sync.js';
-import { saveEntry, startExport as journalExport } from './journal-sync.js';
+import { deleteEntry, saveEntry, startExport as journalExport } from './journal-sync.js';
 import { loadSettings, registerSettings } from './settings.js';
+
+async function journalPageUpdated(journalEntryPage) {
+	if(journalEntryPage.parent && journalEntryPage.parent.pages)
+		await journalUpdated(journalEntryPage.parent);
+}
 
 async function journalUpdated(entry) {
 	const settings = loadSettings();
@@ -40,6 +45,12 @@ Hooks.once('init', async function() {
 
 Hooks.on('createJournalEntry', async function(journalEntry, options, userId) {
 	Logger.logTrace("Hook.createJournalEntry", journalEntry, options, userId);
+	journalUpdated(journalEntry);
+});
+
+Hooks.on('deleteJournalEntry', async function(journalEntry, options, userId) {
+	Logger.logTrace("Hook.deleteJournalEntry", journalEntry, options, userId);
+	deleteEntry(journalEntry, loadSettings());
 });
 
 Hooks.on('openJournalEntry', async function(journalEntry, options, userId) {
@@ -48,22 +59,20 @@ Hooks.on('openJournalEntry', async function(journalEntry, options, userId) {
 
 Hooks.on('updateJournalEntry', async function(journalEntry, data, options, userId) {
 	Logger.logTrace("Hook.updateJournalEntry", journalEntry, data, options, userId);
+	journalUpdated(journalEntry);
 });
 
 Hooks.on('createJournalEntryPage', async function(journalEntryPage, options, userId) {
 	Logger.logTrace("Hook.createJournalEntryPage", journalEntryPage, options, userId);
-	if(journalEntryPage.parent && journalEntryPage.parent.pages)
-		await journalUpdated(journalEntryPage.parent);
+	journalPageUpdated(journalEntryPage);
 });
 
-Hooks.on('deleteJournalEntryPage', async function(journalEntryPage, data, options, userId) {
-	Logger.logTrace("Hook.deleteJournalEntryPage", journalEntryPage, data, options, userId);
-	if(journalEntryPage.parent && journalEntryPage.parent.pages)
-		await journalUpdated(journalEntryPage.parent);
+Hooks.on('deleteJournalEntryPage', async function(journalEntryPage, options, userId) {
+	Logger.logTrace("Hook.deleteJournalEntryPage", journalEntryPage, options, userId);
+	journalPageUpdated(journalEntryPage);
 });
 
 Hooks.on('updateJournalEntryPage', async function(journalEntryPage, data, options, userId) {
 	Logger.logTrace("Hook.updateJournalEntryPage", journalEntryPage, data, options, userId);
-	if(journalEntryPage.parent && journalEntryPage.parent.pages)
-		await journalUpdated(journalEntryPage.parent);
+	journalPageUpdated(journalEntryPage);
 });
